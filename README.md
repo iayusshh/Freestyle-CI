@@ -75,19 +75,46 @@ This matches the assignment requirement: different strategies for main/feature/r
 - Verify: `mvn -version`
 
 ### Step 4 — Install Jenkins
-- Option A (recommended): Docker-based Jenkins
-	- Install Docker Desktop
-	- Run Jenkins container and expose port 8080
-- Option B: Native install via package manager
+
+Option A (recommended) — Docker-based Jenkins
+1. Install Docker Desktop
+2. Run Jenkins:
+	- `docker run -d --name jenkins -p 8080:8080 -p 50000:50000 jenkins/jenkins:lts`
+3. Open Jenkins: `http://localhost:8080`
+4. Unlock Jenkins (Admin Password):
+	- `docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword`
+5. Install plugins:
+	- Start with “Install suggested plugins”
+	- Ensure these are installed (add if missing):
+	  - Git
+	  - Pipeline
+	  - GitHub Branch Source
+	  - JUnit
+
+Option B — Native install (macOS)
+1. `brew install jenkins-lts`
+2. Start Jenkins (one of these will work depending on your brew setup):
+	- `brew services start jenkins-lts`
+	- or run `jenkins-lts`
+3. Open Jenkins: `http://localhost:8080`
+
+After install, complete the admin user setup wizard.
 
 ### Step 5 — Configure Jenkins tools
 1. Manage Jenkins → Tools
-2. Configure JDK and Maven (name the Maven installation `Maven-3` if your Jenkinsfile expects it)
+2. Configure JDK
+	- Add a JDK installation (or ensure Jenkins can find the system JDK)
+3. Configure Maven
+	- Either install Maven on the agent PATH, or configure a Maven installation in Jenkins Tools
+	- If you configure Maven in Tools, you can name it `Maven-3` (useful if your pipeline refers to a named tool)
 
 ### Step 6 — Add GitHub credentials
 1. GitHub → Developer settings → Personal Access Tokens (classic or fine-grained)
+	- Minimum permissions: read access to repository contents (and metadata)
 2. Jenkins → Manage Jenkins → Credentials → (Global) → Add Credentials
 3. Use the PAT as “Secret text” or “Username with password” (token as password)
+
+Tip: Using credentials avoids GitHub API rate-limiting during Multibranch scans.
 
 ### Step 7 — Create jobs
 
@@ -95,6 +122,8 @@ Multibranch Pipeline:
 1. New Item → Multibranch Pipeline
 2. Branch Sources → GitHub → select repo → Discover branches → Save
 3. Trigger: “Scan Multibranch Pipeline Now” or wait for periodic scan
+
+Expected result: Jenkins creates jobs for `main`, `feature/*`, and `release/*` and runs the Jenkinsfile per branch.
 
 Freestyle job (for the demo requirement):
 1. New Item → Freestyle project
