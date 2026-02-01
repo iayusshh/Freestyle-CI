@@ -10,7 +10,41 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh 'mvn -B -ntp -DskipTests package'
+        echo "Building branch: ${env.BRANCH_NAME}"
+        sh 'mvn -B -ntp clean package -DskipTests'
+      }
+    }
+
+    stage('Test') {
+      steps {
+        sh 'mvn -B -ntp test'
+      }
+    }
+
+    stage('Deploy') {
+      when {
+        branch 'main'
+      }
+      steps {
+        echo 'Deploying to production'
+      }
+    }
+
+    stage('Release Build') {
+      when {
+        expression { return env.BRANCH_NAME?.startsWith('release/') }
+      }
+      steps {
+        echo 'Release branch build logic'
+      }
+    }
+
+    stage('Feature Validation') {
+      when {
+        expression { return env.BRANCH_NAME?.startsWith('feature/') }
+      }
+      steps {
+        echo 'Feature branch build only'
       }
     }
   }
