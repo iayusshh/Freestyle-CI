@@ -4,15 +4,14 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                echo "Building branch ${env.BRANCH_NAME}"
-                sh 'echo Build successful'
+                echo "Building branch: ${env.BRANCH_NAME}"
+                sh 'mvn -B -ntp clean compile'
             }
         }
 
         stage('Test') {
             steps {
-                echo "Running tests"
-                sh 'echo Tests passed'
+                sh 'mvn -B -ntp test'
             }
         }
 
@@ -21,26 +20,33 @@ pipeline {
                 branch 'main'
             }
             steps {
-                echo "Deploying from main branch"
+                sh 'echo Deploying application'
             }
         }
 
         stage('Release Build') {
             when {
-                expression { env.BRANCH_NAME.startsWith("release") }
+                expression { return env.BRANCH_NAME?.startsWith('release/') }
             }
             steps {
-                echo "Running release logic"
+                echo 'Running release logic'
             }
         }
 
         stage('Feature Validation') {
             when {
-                expression { env.BRANCH_NAME.startsWith("feature") }
+                expression { return env.BRANCH_NAME?.startsWith('feature/') }
             }
             steps {
-                echo "Running feature validation"
+                echo 'Running feature validation'
             }
+        }
+    }
+
+    post {
+        always {
+            junit 'target/surefire-reports/*.xml'
+            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
         }
     }
 }
